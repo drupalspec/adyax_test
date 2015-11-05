@@ -1,0 +1,14 @@
+name = adyax_test
+description = Adds a custom field type for creates a thumbnail from Viemo
+core = 7.x
+package = Custom
+version = VERSION
+files[] = adyax_test.module
+dependencies[] = ctools
+dependencies[] = page_manager
+dependencies[] = panels
+dependencies[] = features
+features[features_api][] = api:2
+features[field_base][] = field_vimeo
+features[field_instance][] = node-vimeo-field_vimeo
+features[node][] = vimeo

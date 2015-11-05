@@ -1,0 +1,22 @@
+<?php
+
+/**
+ * @file
+ *  Install and uninstall file schema for Vimeo field
+ */
+
+/**
+ * Implements hook_field_schema().
+ */
+function adyax_test_field_schema($field) {
+	$columns = array(
+		'adyax_test_vimeo' => array('type' => 'varchar', 'length' => 255, 'not null' => FALSE),
+	);
+	$indexes = array(
+		'adyax_test_vimeo' => array('adyax_test_vimeo'),
+	);
+	return array(
+		'columns' => $columns,
+		'indexes' => $indexes,
+	);
+}

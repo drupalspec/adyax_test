@@ -1,0 +1,116 @@
+<?php
+
+/**
+ * @file
+ * Adds a custom field type for creates a thumbnail from Viemo
+ */
+
+include_once 'adyax_test.features.inc';
+
+/**
+ * Implements hook_field_info().
+ */
+function adyax_test_field_info() {
+	return array(
+		'adyax_test_vimeo' => array(
+			'label' => t('Vimeo'),
+			'description' => t('Grab thumbnail id from link.'),
+			'settings' => array('max_length' => 255),
+			'default_widget' => 'vimeo_widget',
+			'default_formatter' => 'adyax_test_formatter',
+		),
+	);
+}
+
+/**
+ * Implements hook_field_validate().
+ */
+function adyax_test_field_validate($entity_type, $entity, $field, $instance, $langcode, $items, &$errors) {
+  foreach ($items as $delta => $item) {
+	if (!empty($item['adyax_test_vimeo'])) {
+	  if (!preg_match('/vimeo\.com/i', $item['adyax_test_vimeo']) || !preg_match("/[0-9]+/", $item['adyax_test_vimeo'])) { // Check if vimeo url
+		$errors[$field['field_name']][$langcode][$delta][] = array(
+		  'error' => 'adyax_test_vimeo_invalid',
+		  'message' => t('Your url incorrect. For example: http://vimeo.com/67025679'),
+		);
+	  }
+	}
+  }
+}
+
+/**
+ * Implements hook_field_is_empty().
+ */
+function adyax_test_field_is_empty($item, $field) {
+	if (empty($item['adyax_test_vimeo'])) {
+		return TRUE;
+	}
+	return FALSE;
+}
+
+/**
+ * Implements hook_field_widget_info().
+ */
+function adyax_test_field_widget_info() {
+	return array(
+		'vimeo_widget' => array(
+			'label' => t('Vimeo widget'),
+			'field types' => array('adyax_test_vimeo'),
+		),
+	);
+}
+
+/**
+ * Implements hook_field_formatter_info().
+ */
+function adyax_test_field_formatter_info() {
+	return array(
+		'adyax_test_formatter' => array(
+		'label' => t('Vimeo format'),
+		'field types' => array('adyax_test_vimeo'),
+		),
+	);
+}
+
+/**
+ * Implements hook_field_widget_form().
+ */
+function adyax_test_field_widget_form(&$form, &$form_state, $field, $instance, $langcode, $items, $delta, $element) {
+	switch ($instance['widget']['type']) {
+	  case 'vimeo_widget':
+		$element['adyax_test_vimeo'] = array(
+			'#type' => 'textfield',
+			'#title' => $element['#title'],
+			'#required' => $element['#required'],
+			'#description' => $element['#description'],
+			'#default_value' => isset($items[$delta]['adyax_test_vimeo']) ? $items[$delta]['adyax_test_vimeo'] : NULL,
+			'#delta' => $delta,
+		);
+	  break;
+	} 
+	return $element;
+}
+
+/**
+ * Implements hook_field_formatter_view().
+ */
+function adyax_test_field_formatter_view($entity_type, $entity, $field, $instance, $langcode, $items, $display) {
+	$element = array();
+	foreach ($items as $delta => $item) {
+		$output = preg_replace("/[^0-9]/","",$item['adyax_test_vimeo']);
+		$output = unserialize(file_get_contents("http://vimeo.com/api/v2/video/$output.php"));
+		$output = '<a title="'.$output[0]['title'].'" href="'.$output[0]['url'].'"><img src="'. $output[0]['thumbnail_medium'] . '" alt="'.$output[0]['title'].'"></a>';
+		$output = render($output); // Use this string if have drupal render error.
+		$element[$delta] = array('#markup' => $output);
+	}
+	return $element;
+}
+
+/**
+ * Implements hook_ctools_plugin_directory().
+ */
+function adyax_test_ctools_plugin_directory($module, $plugin) {
+	if (($module == 'panels' && in_array($plugin, array('layouts', 'styles'))) || ($module == 'ctools' && in_array($plugin, array('relationships', 'contexts', 'access', 'content_types')))) {
+		return 'plugins/' . $plugin;
+	}
+}
